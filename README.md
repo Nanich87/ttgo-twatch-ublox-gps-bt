@@ -1,1 +1,1 @@
-# ttgo-twatch-ublox-gps-bt
+# TTGO TWatch with u-blox NEO-M8N GPS
