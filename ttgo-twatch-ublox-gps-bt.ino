@@ -235,7 +235,7 @@ void loop(void)
     if (gps.speed.isValid())
     {
       tft->setTextColor(TFT_YELLOW, TFT_BLACK);
-      tft->print(F(" "));
+      tft->setCursor(80, 220);
       tft->print(gps.speed.kmph(), 1);
       tft->print(F("km/h"));
     }
@@ -243,7 +243,7 @@ void loop(void)
     if(gps.course.isValid())
     {
       tft->setTextColor(TFT_CYAN, TFT_BLACK);
-      tft->print(F(" "));
+      tft->setCursor(160, 220);
       tft->print(gps.course.deg(), 1);
       tft->print(F("d"));
     }
