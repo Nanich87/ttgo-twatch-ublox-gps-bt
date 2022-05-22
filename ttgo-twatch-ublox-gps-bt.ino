@@ -115,8 +115,6 @@ void loop(void)
     power->clearIRQ();
   }
 
-  //ttgo->button->loop();
-
   if (SerialBT.available())
   {
     while (SerialBT.available())
@@ -252,5 +250,6 @@ void loop(void)
     i2 = 0;
   }
 
-  delay(1000);
+  ttgo->button->loop();
+  delay(500);
 }
