@@ -115,7 +115,7 @@ void loop(void)
     power->clearIRQ();
   }
 
-  ttgo->button->loop();
+  //ttgo->button->loop();
 
   if (SerialBT.available())
   {
@@ -218,6 +218,7 @@ void loop(void)
 
     if (gps.satellites.isValid())
     {
+      tft->setCursor(200, 200);
       tft->setTextColor(TFT_WHITE, TFT_BLACK);
       tft->print(F(" ["));
       tft->print(gps.satellites.value());
