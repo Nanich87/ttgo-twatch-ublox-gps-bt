@@ -218,8 +218,16 @@ void loop(void)
     {
       tft->setCursor(200, 200);
       tft->setTextColor(TFT_WHITE, TFT_BLACK);
+
+      byte satellites = gps.satellites.value();
+
       tft->print(F(" ["));
-      tft->print(gps.satellites.value());
+      if (satellites < 10)
+      {
+        tft->print(F(" "));
+      }
+
+      tft->print(satellites);
       tft->print(F("]"));
     }
 
@@ -239,7 +247,7 @@ void loop(void)
       tft->print(F("km/h"));
     }
 
-    if(gps.course.isValid())
+    if (gps.course.isValid())
     {
       tft->setTextColor(TFT_CYAN, TFT_BLACK);
       tft->setCursor(160, 220);
