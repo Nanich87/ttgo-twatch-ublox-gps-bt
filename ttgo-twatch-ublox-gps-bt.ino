@@ -13,6 +13,7 @@ TFT_eSPI *tft ;
 AXP20X_Class *power;
 bool irq = false;
 byte xcolon = 0;
+bool clearTop = false;
 
 TinyGPSPlus gps;
 
@@ -35,62 +36,7 @@ void released()
   ttgo->setBrightness(85);
 }
 
-void setup(void)
-{
-  Serial.begin(115200);
-
-  ttgo = TTGOClass::getWatch();
-  ttgo->begin();
-  ttgo->openBL();
-  ttgo->setBrightness(85);
-
-  tft = ttgo->tft;
-  power = ttgo->power;
-
-  tft->fillScreen(TFT_BLACK);
-  tft->setTextFont(2);
-
-  pinMode(AXP202_INT, INPUT_PULLUP);
-  attachInterrupt(AXP202_INT, [] {
-    irq = true;
-  }, FALLING);
-
-  power->enableIRQ(AXP202_PEK_SHORTPRESS_IRQ, true);
-  power->clearIRQ();
-
-  // GPS
-  tft->println("Initializing u-blox NEO-M8N...");
-
-  ttgo->enableLDO3();
-
-  if (hwSerial == nullptr)
-  {
-    hwSerial = new HardwareSerial(1);
-  }
-  hwSerial->begin(GPS_BAUD_RATE, SERIAL_8N1, GPS_RX, GPS_TX);
-
-  tft->setTextColor(TFT_GREEN);
-  tft->println("Done.");
-
-  // BT
-  tft->setTextColor(TFT_WHITE);
-  tft->println("Initializing bluetooth: ");
-  tft->setTextColor(TFT_YELLOW);
-  tft->println(bt);
-
-  SerialBT.begin(bt);
-
-  tft->setTextColor(TFT_GREEN);
-  tft->println("Done.");
-
-  tft->setTextColor(TFT_WHITE);
-
-  // User button
-  ttgo->button->setPressedHandler(pressed);
-  ttgo->button->setReleasedHandler(released);
-}
-
-void loop(void)
+void checkIRQ()
 {
   if (irq)
   {
@@ -114,36 +60,10 @@ void loop(void)
 
     power->clearIRQ();
   }
+}
 
-  if (SerialBT.available())
-  {
-    while (SerialBT.available())
-    {
-      bufferReceive[i1] = (uint8_t)SerialBT.read();
-      if (i1 < BUFFER_SIZE - 1)
-      {
-        i1++;
-      }
-    }
-
-    hwSerial->write(bufferReceive, i1);
-    i1 = 0;
-  }
-
-  if (hwSerial->available())
-  {
-    while (hwSerial->available())
-    {
-      bufferSend[i2] = (char)hwSerial->read();
-      gps.encode(bufferSend[i2]);
-      if (i2 < BUFFER_SIZE - 1)
-      {
-        i2++;
-      }
-    }
-
-    SerialBT.write(bufferSend, i2);
-
+void printTime()
+{
     tft->setTextSize(1);
     tft->setTextColor(COLOR_ORANGE, TFT_BLACK);
 
@@ -203,22 +123,28 @@ void loop(void)
     tft->print(mmonth);
     tft->print(".");
     tft->print(yyear);
+}
 
-    tft->setTextSize(1);
-
+void printLocation()
+{
     if (gps.location.isValid())
     {
+      tft->setTextSize(1);
       tft->setCursor(10, 200);
       tft->print(gps.location.lat(), 8);
       tft->print(F(","));
       tft->print(gps.location.lng(), 8);
     }
+}
 
+void printSatellites()
+{
     if (gps.satellites.isValid())
     {
-      tft->setCursor(200, 200);
+      tft->setTextSize(1);
       tft->setTextColor(TFT_WHITE, TFT_BLACK);
-
+      tft->setCursor(200, 200);
+      
       byte satellites = gps.satellites.value();
 
       tft->print(F(" ["));
@@ -230,32 +156,176 @@ void loop(void)
       tft->print(satellites);
       tft->print(F("]"));
     }
+}
 
+void printAltitude()
+{
     if (gps.altitude.isValid())
     {
+      tft->setTextSize(1);
       tft->setTextColor(TFT_GREEN, TFT_BLACK);
       tft->setCursor(10, 220);
       tft->print(gps.altitude.meters(), 3);
       tft->print(F("m"));
     }
+}
 
+void printSpeed()
+{
     if (gps.speed.isValid())
     {
+      tft->setTextSize(1);
       tft->setTextColor(TFT_YELLOW, TFT_BLACK);
       tft->setCursor(80, 220);
       tft->print(gps.speed.kmph(), 1);
       tft->print(F("km/h"));
     }
+}
 
+void printCourse()
+{
     if (gps.course.isValid())
     {
+      tft->setTextSize(1);
       tft->setTextColor(TFT_CYAN, TFT_BLACK);
       tft->setCursor(160, 220);
       tft->print(gps.course.deg(), 1);
       tft->print(F("d"));
     }
+}
 
+void setup(void)
+{
+  Serial.begin(115200);
+
+  ttgo = TTGOClass::getWatch();
+  ttgo->begin();
+  ttgo->openBL();
+  ttgo->setBrightness(85);
+
+  tft = ttgo->tft;
+  power = ttgo->power;
+
+  tft->fillScreen(TFT_BLACK);
+  tft->setTextFont(2);
+
+  pinMode(AXP202_INT, INPUT_PULLUP);
+  attachInterrupt(AXP202_INT, [] {
+    irq = true;
+  }, FALLING);
+
+  power->enableIRQ(AXP202_PEK_SHORTPRESS_IRQ, true);
+  power->clearIRQ();
+
+  // GPS
+  tft->println("Initializing u-blox NEO-M8N...");
+
+  ttgo->enableLDO3();
+
+  if (hwSerial == nullptr)
+  {
+    hwSerial = new HardwareSerial(1);
+  }
+  hwSerial->begin(GPS_BAUD_RATE, SERIAL_8N1, GPS_RX, GPS_TX);
+
+  tft->setTextColor(TFT_GREEN);
+  tft->println("Done.");
+
+  // BT
+  tft->setTextColor(TFT_WHITE);
+  tft->println("Initializing bluetooth: ");
+  tft->setTextColor(TFT_YELLOW);
+  tft->println(bt);
+
+  SerialBT.begin(bt);
+
+  tft->setTextColor(TFT_GREEN);
+  tft->println("Done.");
+
+  tft->setTextColor(TFT_WHITE);
+
+  // User button
+  ttgo->button->setPressedHandler(pressed);
+  ttgo->button->setReleasedHandler(released);
+}
+
+void loop(void)
+{
+  checkIRQ();
+
+  if (SerialBT.available())
+  {
+    while (SerialBT.available())
+    {
+      bufferReceive[i1] = (uint8_t)SerialBT.read();
+      if (i1 < BUFFER_SIZE - 1)
+      {
+        i1++;
+      }
+    }
+
+    if (clearTop == false)
+    {
+      tft->fillRect(0, 0, 240, 80, TFT_BLACK);
+      
+      tft->setTextColor(TFT_WHITE, TFT_BLACK);
+      tft->setCursor(0, 0);
+      tft->print("  Data Received:  ");
+      
+      clearTop = true;
+    }
+
+    hwSerial->write(bufferReceive, i1);
+
+    tft->setTextColor(TFT_GREEN, TFT_BLACK);
+    tft->setCursor(120, 0);
+
+    if (i1 < 10)
+    {
+      tft->print("   ");
+    }
+    else if(i1 < 100)
+    {
+      tft->print("  ");
+    }
+    else if(i1 < 1000)
+    {
+      tft->print(" ");
+    }
+    
+    tft->print(i1);
+    
+    i1 = 0;
+  }
+  else if (clearTop)
+  {
+    tft->setTextColor(TFT_GREEN, TFT_BLACK);
+    tft->setCursor(120, 0);
+
+    tft->print("   0");
+  }
+
+  if (hwSerial->available())
+  {
+    while (hwSerial->available())
+    {
+      bufferSend[i2] = (char)hwSerial->read();
+      gps.encode(bufferSend[i2]);
+      if (i2 < BUFFER_SIZE - 1)
+      {
+        i2++;
+      }
+    }
+
+    SerialBT.write(bufferSend, i2);
     i2 = 0;
+
+    printTime();
+    printLocation();
+    printSatellites();
+    printAltitude();
+    printSpeed();
+    printCourse();
   }
 
   ttgo->button->loop();
