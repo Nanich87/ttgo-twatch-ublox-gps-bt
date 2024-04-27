@@ -62,6 +62,46 @@ void checkIRQ()
   }
 }
 
+void printDataReceived()
+{
+    if (clearTop == false)
+    {
+      tft->fillRect(0, 0, 240, 80, TFT_BLACK);
+      
+      tft->setTextColor(TFT_WHITE, TFT_BLACK);
+      tft->setCursor(0, 0);
+      tft->print("  Data Received:  ");
+      
+      clearTop = true;
+    }
+
+    tft->setTextColor(TFT_GREEN, TFT_BLACK);
+    tft->setCursor(120, 0);
+
+    if (i1 < 10)
+    {
+      tft->print("   ");
+    }
+    else if(i1 < 100)
+    {
+      tft->print("  ");
+    }
+    else if(i1 < 1000)
+    {
+      tft->print(" ");
+    }
+    
+    tft->print(i1);
+}
+
+void clearDataReceived()
+{
+    tft->setTextColor(TFT_GREEN, TFT_BLACK);
+    tft->setCursor(120, 0);
+
+    tft->print("   0");
+}
+
 void printTime()
 {
     tft->setTextSize(1);
@@ -264,45 +304,15 @@ void loop(void)
       }
     }
 
-    if (clearTop == false)
-    {
-      tft->fillRect(0, 0, 240, 80, TFT_BLACK);
-      
-      tft->setTextColor(TFT_WHITE, TFT_BLACK);
-      tft->setCursor(0, 0);
-      tft->print("  Data Received:  ");
-      
-      clearTop = true;
-    }
-
     hwSerial->write(bufferReceive, i1);
 
-    tft->setTextColor(TFT_GREEN, TFT_BLACK);
-    tft->setCursor(120, 0);
-
-    if (i1 < 10)
-    {
-      tft->print("   ");
-    }
-    else if(i1 < 100)
-    {
-      tft->print("  ");
-    }
-    else if(i1 < 1000)
-    {
-      tft->print(" ");
-    }
-    
-    tft->print(i1);
+    printDataReceived();
     
     i1 = 0;
   }
   else if (clearTop)
   {
-    tft->setTextColor(TFT_GREEN, TFT_BLACK);
-    tft->setCursor(120, 0);
-
-    tft->print("   0");
+    clearDataReceived();
   }
 
   if (hwSerial->available())
